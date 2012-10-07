@@ -1,5 +1,9 @@
-- if (user != undefined)
-  span= "HI, "+user+" "
-  a(href="/logout")= "Logout"
+- if (!everyauth.loggedIn)
+  h2 Not Authenticated
+  #register
+    a(href='/register') Register
+  #password-login
+    a(href='/login', style='border: 0px') Login with Password
 - else
-  a(href= "/auth/twitter")= "Login"
+  h3
+    a(href='/logout') Logout
