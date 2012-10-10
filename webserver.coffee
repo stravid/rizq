@@ -4,13 +4,46 @@ everyauth = require 'everyauth'
 postgres = require 'pg'
 
 
-usersByLogin = {
-  'sepp': {
-      login: 'sepp',
-      email: 'sepp@rizq.com'
-    , password: 'sepp'
-  }
-}
+#local db
+conString = keys.postgresConnection
+client = new postgres.Client(conString)
+
+#Heroku db
+#client = new pg.Client(process.env.DATABASE_URL);
+
+client.connect()
+
+
+usersByLogin = (email, password, callback)=>
+  errors = []
+  user = {}
+  if(!email) 
+    errors.push('Missing email')
+  if(!password) 
+    errors.push('Missing password')
+
+  cli = client.query({
+    text: "select * from users where email = $1",
+    values: [email]
+  })
+
+  cli.on('row', (result)->
+    user = result
+  )
+
+  cli.on('end', ()->
+    console.log("currentPos")
+    if(user == {})
+      errors.push('Login failed')
+    if(user.password != password) 
+      errors.push('Login failed')
+    if(errors.length) 
+      callback(errors)
+      return
+    callback(user)
+    client.end())
+
+
 
 #password authentication
 #
@@ -25,20 +58,16 @@ everyauth
         done null, { title: 'Async login' }
       , 200
     )
-    .authenticate( (login, password) ->
-      errors = []
-      if(!login) 
-        errors.push('Missing login')
-      if(!password) 
-        errors.push('Missing password')
-      if(errors.length) 
-        return errors
-      user = usersByLogin[login]
-      if(!user) 
-        return ['Login failed']
-      if(user.password != password) 
-        return ['Login failed']
-      return user
+    .authenticate( (email, password) ->
+      return usersByLogin(email, password, (result)->
+
+        if(Object.prototype.toString.call(result) != '[object Array]')
+          return result
+        else
+          console.log("WTF")
+          return false
+      )
+
     )
     .getRegisterPath('/register')
     .postRegisterPath('/register')
@@ -49,14 +78,14 @@ everyauth
       , 200
     )
     .validateRegistration( (newUserAttrs, errors) ->
-      login = newUserAttrs.login;
-      if (usersByLogin[login]) 
+      email = newUserAttrs.email;
+      if (usersByLogin(email)) 
         errors.push('Login already taken');
       return errors;
     )
     .registerUser( (newUserAttrs) ->
-      login = newUserAttrs[this.loginKey()];
-      return usersByLogin[login] = addUser(newUserAttrs);
+      email = newUserAttrs[this.loginKey];
+      return usersByLogin[email] = addUser(newUserAttrs);
     )
     .loginSuccessRedirect('/')
     .registerSuccessRedirect('/');
@@ -88,7 +117,7 @@ app.configure ->
   app.use express.bodyParser()
   app.use express.methodOverride()
   app.use express.cookieParser()
-  app.use express.session {secret: 'einszworisiko'}
+  app.use express.session {secret: keys.appSecret}
   app.use everyauth.middleware()
   app.use app.router
 
@@ -98,7 +127,7 @@ app.configure ->
 everyauth.helpExpress(app)
 
 
-port = process.env.PORT || 4000
+port = process.env.PORT || 4005
 app.listen port, ->
   console.log port
 
