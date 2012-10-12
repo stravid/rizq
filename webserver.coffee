@@ -3,7 +3,6 @@ keys = require './keys.js'
 everyauth = require 'everyauth'
 postgres = require 'pg'
 
-
 #local db
 conString = keys.postgresConnection
 client = new postgres.Client(conString)
@@ -13,37 +12,11 @@ client = new postgres.Client(conString)
 
 client.connect()
 
-
-usersByLogin = (email, password, callback)=>
-  errors = []
-  user = {}
-  if(!email) 
-    errors.push('Missing email')
-  if(!password) 
-    errors.push('Missing password')
-
-  cli = client.query({
-    text: "select * from users where email = $1",
-    values: [email]
-  })
-
-  cli.on('row', (result)->
-    user = result
-  )
-
-  cli.on('end', ()->
-    console.log("currentPos")
-    if(user == {})
-      errors.push('Login failed')
-    if(user.password != password) 
-      errors.push('Login failed')
-    if(errors.length) 
-      callback(errors)
-      return
-    callback(user)
-    client.end())
-
-
+User =
+  authenticate: (email, password, callback) ->
+    client.query 'SELECT * FROM users WHERE email = $1 AND password = $2 LIMIT 1', [email, password], (error, result) ->
+      callback null, result.rows[0] if result.rows.length > 0
+      callback 'Login failed' unless result.rows.length > 0
 
 #password authentication
 #
@@ -53,21 +26,19 @@ everyauth
     .getLoginPath('/login')
     .postLoginPath('/login')
     .loginView('login.jade')
-    .loginLocals( (req, res, done) -> 
+    .loginLocals( (req, res, done) ->
       setTimeout ->
         done null, { title: 'Async login' }
       , 200
     )
     .authenticate( (email, password) ->
-      return usersByLogin(email, password, (result)->
+      promise = @Promise()
 
-        if(Object.prototype.toString.call(result) != '[object Array]')
-          return result
-        else
-          console.log("WTF")
-          return false
-      )
+      User.authenticate email, password, (error, user) ->
+        promise.fulfill [error] if error?
+        promise.fulfill user unless error?
 
+      return promise
     )
     .getRegisterPath('/register')
     .postRegisterPath('/register')
@@ -79,7 +50,7 @@ everyauth
     )
     .validateRegistration( (newUserAttrs, errors) ->
       email = newUserAttrs.email;
-      if (usersByLogin(email)) 
+      if (usersByLogin(email))
         errors.push('Login already taken');
       return errors;
     )
