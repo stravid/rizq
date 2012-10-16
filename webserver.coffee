@@ -1,22 +1,7 @@
 express  = require 'express'
 keys = require './keys.js'
 everyauth = require 'everyauth'
-postgres = require 'pg'
-
-#local db
-conString = keys.postgresConnection
-client = new postgres.Client(conString)
-
-#Heroku db
-#client = new pg.Client(process.env.DATABASE_URL);
-
-client.connect()
-
-User =
-  authenticate: (email, password, callback) ->
-    client.query 'SELECT * FROM users WHERE email = $1 AND password = $2 LIMIT 1', [email, password], (error, result) ->
-      callback null, result.rows[0] if result.rows.length > 0
-      callback 'Login failed' unless result.rows.length > 0
+User = require './models/user.coffee'
 
 #password authentication
 #
