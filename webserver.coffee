@@ -7,7 +7,7 @@ User = require './models/user.coffee'
 #
 everyauth
   .password
-    .loginWith('email')
+    .loginWith('login')
     .getLoginPath('/login')
     .postLoginPath('/login')
     .loginView('login.jade')
@@ -16,12 +16,12 @@ everyauth
         done null, { title: 'Async login' }
       , 200
     )
-    .authenticate( (email, password) ->
+    .authenticate( (login, password) ->
       promise = @Promise()
 
-      User.authenticate email, password, (error, user) ->
+      User.authenticate login, password, (error, login) ->
         promise.fulfill [error] if error?
-        promise.fulfill user unless error?
+        promise.fulfill login unless error?
 
       return promise
     )
@@ -34,14 +34,14 @@ everyauth
       , 200
     )
     .validateRegistration( (newUserAttrs, errors) ->
-      email = newUserAttrs.email;
-      if (usersByLogin(email))
+      user = newUserAttrs.login;
+      if (usersByLogin(user))
         errors.push('Login already taken');
       return errors;
     )
     .registerUser( (newUserAttrs) ->
-      email = newUserAttrs[this.loginKey];
-      return usersByLogin[email] = addUser(newUserAttrs);
+      user = newUserAttrs[this.loginKey];
+      return usersByLogin[user] = addUser(newUserAttrs);
     )
     .loginSuccessRedirect('/')
     .registerSuccessRedirect('/');
@@ -52,8 +52,8 @@ everyauth
 everyauth.twitter
   .consumerKey(keys.twitterKey)
   .consumerSecret(keys.twitterSecret)
-  .findOrCreateUser((session, token, secret, user) ->
-    promise = @.Promise().fulfill user
+  .findOrCreateUser((session, token, secret, login) ->
+    promise = @.Promise().fulfill login
   ).redirectPath '/'
 
 #facebook authentication

@@ -3,9 +3,9 @@
     - each error in errors
       li.error= error
 form(action='/login', method='post')
-  #email
-    label(for=everyauth.password.loginFormFieldName) Email
-    input(type='email', name=everyauth.password.loginFormFieldName, value=email)
+  #login
+    label(for=everyauth.password.loginFormFieldName) Username
+    input(type='login', name=everyauth.password.loginFormFieldName, value=login)
   #password
     label(for=everyauth.password.passwordFormFieldName) Password
     input(type='password', name=everyauth.password.passwordFormFieldName)
