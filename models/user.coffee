@@ -8,10 +8,9 @@ class User
 
   @register: (userAttrs, callback) ->
     database.query({
-        text: 'INSERT into users(id, username, password) values' +
-        '($1, $2, $3)',
+        text: 'INSERT into users(username, password) values' +
+        '($1, $2)',
         values: [
-                    11,
                     userAttrs.login, 
                     userAttrs.password
                 ]
