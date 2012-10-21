@@ -34,14 +34,24 @@ everyauth
       , 200
     )
     .validateRegistration( (newUserAttrs, errors) ->
+      promise = @Promise()
+
       user = newUserAttrs.login;
-      if (usersByLogin(user))
-        errors.push('Login already taken');
-      return errors;
+      User.validateUser user, (error, login)->
+        promise.fulfill [error] if error?
+        promise.fulfill login unless error?
+      
+      return promise
     )
     .registerUser( (newUserAttrs) ->
-      user = newUserAttrs[this.loginKey];
-      return usersByLogin[user] = addUser(newUserAttrs);
+      promise = @Promise()
+
+      console.log(newUserAttrs.login)
+      User.register newUserAttrs, (error, login) ->
+        promise.fulfill [error] if error?
+        promise.fulfill login unless error?
+
+      return promise
     )
     .loginSuccessRedirect('/')
     .registerSuccessRedirect('/');
