@@ -42,7 +42,7 @@ everyauth
 
       return promise.fulfill errors if errors.length > 0
 
-      User.validateUser newUserAttributes.login, (error, login)->
+      User.validateUsername newUserAttributes.login, (error, login)->
         promise.fulfill [error] if error?
         promise.fulfill login unless error?
 

@@ -11,9 +11,9 @@ class User
       callback null, true if result != undefined && !error
       callback 'Registration failed' if result == undefined || error
 
-  @validateUser: (user, callback) ->
+  @validateUsername: (user, callback) ->
     database.query 'SELECT * FROM users WHERE username = $1 LIMIT 1', [user], (error, result) ->
-      callback 'Registration failed' if result.rows.length > 0
+      callback 'Username already taken' if result.rows.length > 0
       callback null, true unless result.rows.length > 0
 
 module.exports = User
