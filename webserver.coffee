@@ -33,21 +33,26 @@ everyauth
         done null, {title: 'Async Register'}
       , 200
     )
-    .validateRegistration( (newUserAttrs, errors) ->
+    .validateRegistration( (newUserAttributes, errors) ->
       promise = @Promise()
 
-      user = newUserAttrs.login;
-      User.validateUser user, (error, login)->
+      errors = []
+      errors.push 'Password can not be blank' if newUserAttributes.password.length < 1
+      errors.push 'Username can not be blank' if newUserAttributes.login.length < 1
+
+      return promise.fulfill errors if errors.length > 0
+
+      User.validateUser newUserAttributes.login, (error, login)->
         promise.fulfill [error] if error?
         promise.fulfill login unless error?
-      
+
       return promise
     )
-    .registerUser( (newUserAttrs) ->
+    .registerUser( (newUserAttributes) ->
       promise = @Promise()
 
-      console.log(newUserAttrs.login)
-      User.register newUserAttrs, (error, login) ->
+      console.log(newUserAttributes.login)
+      User.register newUserAttributes, (error, login) ->
         promise.fulfill [error] if error?
         promise.fulfill login unless error?
 
