@@ -9,11 +9,7 @@ everyauth
     .getLoginPath('/login')
     .postLoginPath('/login')
     .loginView('login.jade')
-    .loginLocals( (req, res, done) ->
-      setTimeout ->
-        done null, { title: 'Async login' }
-      , 200
-    )
+    .loginLocals({ title: 'Login' })
     .authenticate( (login, password) ->
       promise = @Promise()
 
@@ -26,11 +22,7 @@ everyauth
     .getRegisterPath('/register')
     .postRegisterPath('/register')
     .registerView('register.jade')
-    .registerLocals( (req, res, done) ->
-      setTimeout ->
-        done null, {title: 'Async Register'}
-      , 200
-    )
+    .registerLocals({ title: 'Register' })
     .validateRegistration( (newUserAttributes, errors) ->
       promise = @Promise()
 
@@ -64,23 +56,23 @@ app = express.createServer()
 app.configure ->
   app.set 'view engine', 'jade'
   app.set 'views', __dirname + '/views'
-  app.set 'view options', {title: "rizq"}
+  app.set 'view options', { title: "rizq" }
   app.use express.static __dirname + '/views'
   app.use express.bodyParser()
   app.use express.methodOverride()
   app.use express.cookieParser()
-  app.use express.session {secret: keys.appSecret}
+  app.use express.session { secret: keys.appSecret }
   app.use everyauth.middleware()
   app.use app.router
 
 #somekind of blackbox magic stuff to get custom authentication working
 #https://github.com/bnoguchi/everyauth/issues/221
-everyauth.helpExpress(app)
+everyauth.helpExpress app
 
 port = process.env.PORT || 4005
 app.listen port, ->
-  console.log port
+  console.log "Rizq is running on port #{port}"
 
 #routes
-app.get '/', (req, res)->
-  res.render('index')
+app.get '/', (request, response) ->
+  response.render 'index'
