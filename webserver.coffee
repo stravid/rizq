@@ -3,8 +3,6 @@ keys = require './keys.js'
 everyauth = require 'everyauth'
 User = require './models/user.coffee'
 
-#password authentication
-#
 everyauth
   .password
     .loginWith('login')
@@ -58,25 +56,9 @@ everyauth
       return promise
     )
     .loginSuccessRedirect('/')
-    .registerSuccessRedirect('/');
-
-
-#twitter authentication
-#
-everyauth.twitter
-  .consumerKey(keys.twitterKey)
-  .consumerSecret(keys.twitterSecret)
-  .findOrCreateUser((session, token, secret, login) ->
-    promise = @.Promise().fulfill login
-  ).redirectPath '/'
-
-#facebook authentication
-#
-#TODO
-
+    .registerSuccessRedirect('/')
 
 #create express app
-#
 app = express.createServer()
 
 app.configure ->
@@ -93,18 +75,12 @@ app.configure ->
 
 #somekind of blackbox magic stuff to get custom authentication working
 #https://github.com/bnoguchi/everyauth/issues/221
-#
 everyauth.helpExpress(app)
-
 
 port = process.env.PORT || 4005
 app.listen port, ->
   console.log port
 
 #routes
-#
 app.get '/', (req, res)->
   res.render('index')
-
-app.get '/login', (req, res)->
-  res.render('login')
