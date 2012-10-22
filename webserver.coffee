@@ -51,7 +51,6 @@ everyauth
     .registerUser( (newUserAttributes) ->
       promise = @Promise()
 
-      console.log(newUserAttributes.login)
       User.register newUserAttributes, (error, login) ->
         promise.fulfill [error] if error?
         promise.fulfill login unless error?
