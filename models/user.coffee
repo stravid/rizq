@@ -4,7 +4,7 @@ bcrypt = require 'bcrypt'
 class User
   @authenticate: (username, password, callback) ->
     database.query 'SELECT * FROM users WHERE username = $1 LIMIT 1', [username], (error, result) ->
-      callback 'Username not found' unless result.rows.length > 0
+      return callback 'Username not found' unless result.rows.length > 0
 
       if bcrypt.compareSync password, result.rows[0].encrypted_password
         callback null, result.rows[0]
