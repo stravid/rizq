@@ -1,8 +1,13 @@
+io = require 'socket.io'
 express  = require 'express'
 keys = require './keys.js'
 everyauth = require 'everyauth'
 User = require './models/user.coffee'
+MemoryStore = express.session.MemoryStore
+parseCookie = require('connect').utils.parseCookie
+Session     = require('connect').middleware.session.Session
 
+#authentication
 everyauth
   .password
     .loginWith('login')
@@ -52,6 +57,7 @@ everyauth
 
 #create express app
 app = express.createServer()
+sessionStore = new MemoryStore()
 
 app.configure ->
   app.set 'view engine', 'jade'
@@ -61,7 +67,11 @@ app.configure ->
   app.use express.bodyParser()
   app.use express.methodOverride()
   app.use express.cookieParser()
-  app.use express.session { secret: keys.appSecret }
+  app.use express.session { 
+    secret: keys.appSecret ,
+    store: sessionStore,
+    key: 'express.sid'
+  }
   app.use everyauth.middleware()
   app.use app.router
 
@@ -70,8 +80,38 @@ app.configure ->
 everyauth.helpExpress app
 
 port = process.env.PORT || 4005
+
+#socket io
+sio = io.listen(app)
+
 app.listen port, ->
   console.log "Rizq is running on port #{port}"
+
+sio.set 'authorization', (data, accept)->
+  if(data.headers.cookie)
+    data.cookie = parseCookie(data.headers.cookie)
+    data.sessionID = data.cookie['express.sid']
+    sessionStore.get data.sessionID, (error, session)->
+      if(error||!session)
+        accept 'Error', false
+      else 
+        data.session = new Session data, session
+        accept null, true
+  else
+    return accept 'No cookie transmitted.', false
+
+sio.sockets.on 'connection', (socket) ->
+  hs = socket.handshake;
+  console.log('A socket with sessionID ' + hs.sessionID + ' connected!');
+  #setup an inteval that will keep our session fresh
+  
+  intervalID = setInterval ()->
+    hs.session.reload ()->
+      hs.session.touch().save()
+  , 60 * 1000
+
+  socket.on 'disconnect', ()->
+    clearInterval(intervalID)
 
 #routes
 app.get '/', (request, response) ->
