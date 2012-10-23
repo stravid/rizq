@@ -1,11 +1,11 @@
 io = require 'socket.io'
-express  = require 'express'
+express = require 'express'
 keys = require './keys.js'
 everyauth = require 'everyauth'
 User = require './models/user.coffee'
 MemoryStore = express.session.MemoryStore
 parseCookie = require('connect').utils.parseCookie
-Session     = require('connect').middleware.session.Session
+Session = require('connect').middleware.session.Session
 
 #authentication
 everyauth
@@ -67,11 +67,11 @@ app.configure ->
   app.use express.bodyParser()
   app.use express.methodOverride()
   app.use express.cookieParser()
-  app.use express.session { 
-    secret: keys.appSecret ,
-    store: sessionStore,
+  app.use express.session
+    secret: keys.appSecret
+    store: sessionStore
     key: 'express.sid'
-  }
+
   app.use everyauth.middleware()
   app.use app.router
 
@@ -82,37 +82,44 @@ everyauth.helpExpress app
 port = process.env.PORT || 4005
 
 #socket io
-sio = io.listen(app)
+socketIO = io.listen(app)
 
 app.listen port, ->
   console.log "Rizq is running on port #{port}"
 
-sio.set 'authorization', (data, accept)->
-  if(data.headers.cookie)
-    data.cookie = parseCookie(data.headers.cookie)
-    data.sessionID = data.cookie['express.sid']
-    sessionStore.get data.sessionID, (error, session)->
-      if(error||!session)
-        accept 'Error', false
-      else 
-        data.session = new Session data, session
-        accept null, true
-  else
-    return accept 'No cookie transmitted.', false
 
-sio.sockets.on 'connection', (socket) ->
-  hs = socket.handshake;
-  console.log('A socket with sessionID ' + hs.sessionID + ' connected!');
-  #setup an inteval that will keep our session fresh
-  
-  intervalID = setInterval ()->
-    hs.session.reload ()->
-      hs.session.touch().save()
+
+
+
+socketIO.set 'authorization', (data, accept) ->
+  return accept 'No cookie transmitted', false unless data.headers.cookie?
+
+  data.cookie = parseCookie data.headers.cookie
+  data.sessionID = data.cookie['express.sid']
+  data.sessionStore = sessionStore
+
+  sessionStore.get data.sessionID, (error, session) ->
+    if error? or !session?
+      accept 'Error', false
+    else
+      data.session = new Session data, session
+      accept null, true
+
+socketIO.sockets.on 'connection', (socket) ->
+  console.log "Socket with sessionID #{socket.handshake.sessionID} connected"
+
+  localHandshake = socket.handshake
+
+  intervalID = setInterval ->
+    console.log "Session interval."
+    localHandshake.session.reload ->
+      localHandshake.session.touch().save()
   , 60 * 1000
 
-  socket.on 'disconnect', ()->
-    clearInterval(intervalID)
+  socket.on 'disconnect', -> clearInterval intervalID
 
 #routes
 app.get '/', (request, response) ->
+  return response.redirect '/login' unless request.loggedIn
+
   response.render 'index'
