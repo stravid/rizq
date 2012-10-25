@@ -1,0 +1,20 @@
+<h2>Register</h2>
+
+<%if @errors?: %>
+<ul>
+  <% for error in @errors: %>
+  <li><%= error %></li>
+  <% end %>
+</ul>
+<% end %>
+
+<form action="/register" method="POST">
+  <label for="<%= @everyauth.password.loginFormFieldName %>">Username</label><br>
+  <input type="text" name="<%= @everyauth.password.loginFormFieldName %>" value="<%= @userParams[@everyauth.password.loginFormFieldName] %>"/><br>
+  <label for="<%= @everyauth.password.passwordFormFieldName %>">Password</label><br>
+  <input type="password" name="<%= @everyauth.password.passwordFormFieldName %>" /><br>
+  <input type="submit" value="Register" />
+</form>
+<br>
+<br>
+<a href="/login">Login</a>

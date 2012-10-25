@@ -13,7 +13,7 @@ everyauth
     .loginWith('login')
     .getLoginPath('/login')
     .postLoginPath('/login')
-    .loginView('login.jade')
+    .loginView('login.eco')
     .loginLocals({ title: 'Login' })
     .authenticate( (login, password) ->
       promise = @Promise()
@@ -26,7 +26,7 @@ everyauth
     )
     .getRegisterPath('/register')
     .postRegisterPath('/register')
-    .registerView('register.jade')
+    .registerView('register.eco')
     .registerLocals({ title: 'Register' })
     .validateRegistration( (newUserAttributes, errors) ->
       promise = @Promise()
@@ -55,12 +55,14 @@ everyauth
     .loginSuccessRedirect('/')
     .registerSuccessRedirect('/')
 
+everyauth.everymodule.findUserById (userId, callback) -> User.find userId, callback
+
 #create express app
 app = express.createServer()
 sessionStore = new MemoryStore()
 
 app.configure ->
-  app.set 'view engine', 'jade'
+  app.set 'view engine', 'eco'
   app.set 'views', __dirname + '/views'
   app.set 'view options', { title: "rizq" }
   app.use express.static __dirname + '/views'
@@ -86,10 +88,6 @@ socketIO = io.listen(app)
 
 app.listen port, ->
   console.log "Rizq is running on port #{port}"
-
-
-
-
 
 socketIO.set 'authorization', (data, accept) ->
   return accept 'No cookie transmitted', false unless data.headers.cookie?
