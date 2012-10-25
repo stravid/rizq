@@ -77,6 +77,11 @@ app.configure ->
   app.use everyauth.middleware()
   app.use app.router
 
+  # Asset pipeline for serving CoffeeScript
+  app.use require('connect-assets')()
+  css.root = '/stylesheets'
+  js.root = '/javascripts'
+
 #somekind of blackbox magic stuff to get custom authentication working
 #https://github.com/bnoguchi/everyauth/issues/221
 everyauth.helpExpress app
