@@ -7,6 +7,14 @@ MemoryStore = express.session.MemoryStore
 parseCookie = require('connect').utils.parseCookie
 Session = require('connect').middleware.session.Session
 
+GameServer = require './game_server.coffee'
+
+userSessions = [];
+userSockets = [];
+
+GameServer.userSockets = userSockets;
+GameServer.userSessions = userSessions;
+
 #authentication
 everyauth
   .password
@@ -107,9 +115,11 @@ socketIO.set 'authorization', (data, accept) ->
     else
       data.session = new Session data, session
       accept null, true
+      userSessions[data.session.id] = session.auth.userId;
 
 socketIO.sockets.on 'connection', (socket) ->
   console.log "Socket with sessionID #{socket.handshake.sessionID} connected"
+  userSockets[userSessions[socket.handshake.sessionID]] = socket;
 
   localHandshake = socket.handshake
 
@@ -126,3 +136,5 @@ app.get '/', (request, response) ->
   return response.redirect '/login' unless request.loggedIn
 
   response.render 'index'
+
+
